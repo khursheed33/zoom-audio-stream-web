@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zoom Audio Streamer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      color: #333;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .meeting-list {
+      margin-top: 20px;
+    }
+    .meeting-item {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: white;
+      border-radius: 4px;
+    }
+    audio {
+      width: 100%;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Zoom Audio Streamer</h1>
+    <div class="form-group">
+      <label for="sdkKey">SDK Key:</label>
+      <input type="text" id="sdkKey" placeholder="Enter Zoom SDK Key" required>
+    </div>
+    <div class="form-group">
+      <label for="sdkSecret">SDK Secret:</label>
+      <input type="text" id="sdkSecret" placeholder="Enter Zoom SDK Secret" required>
+    </div>
+    <div class="form-group">
+      <label for="meetingId">Meeting ID:</label>
+      <input type="text" id="meetingId" placeholder="Enter Meeting ID">
+    </div>
+    <div class="form-group">
+      <label for="password">Password:</label>
+      <input type="text" id="password" placeholder="Enter Meeting Password">
+    </div>
+    <div class="form-group">
+      <label for="interpretationLanguage">Interpretation Language:</label>
+      <select id="interpretationLanguage">
+        <option value="English">English</option>
+        <option value="Spanish">Spanish</option>
+        <option value="French">French</option>
+      </select>
+    </div>
+    <button onclick="addMeeting()">Add Meeting</button>
+    <div class="meeting-list" id="meetingList"></div>
+  </div>
+
+  <script>
+    const ws = new WebSocket('ws://localhost:8080');
+    const meetings = {};
+
+    ws.onopen = () => console.log('Connected to WebSocket server');
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.meetingId) {
+        const audioElement = document.getElementById(`audio-${data.meetingId}`);
+        if (audioElement) {
+          audioElement.src = `data:audio/mp3;base64,${data.audio}`;
+        }
+      }
+    };
+    ws.onerror = (err) => console.error('WebSocket error:', err);
+    ws.onclose = () => console.log('WebSocket closed');
+
+    function addMeeting() {
+      const sdkKey = document.getElementById('sdkKey').value;
+      const sdkSecret = document.getElementById('sdkSecret').value;
+      const meetingId = document.getElementById('meetingId').value;
+      const password = document.getElementById('password').value;
+      const interpretationLanguage = document.getElementById('interpretationLanguage').value;
+
+      if (!sdkKey || !sdkSecret || !meetingId) {
+        alert('Please fill in SDK Key, SDK Secret, and Meeting ID');
+        return;
+      }
+
+      // Send meeting details to WebSocket server
+      ws.send(JSON.stringify({
+        action: 'join',
+        sdkKey,
+        sdkSecret,
+        meetingId,
+        password,
+        interpretationLanguage
+      }));
+
+      // Add meeting to UI
+      const meetingList = document.getElementById('meetingList');
+      const meetingDiv = document.createElement('div');
+      meetingDiv.className = 'meeting-item';
+      meetingDiv.innerHTML = `
+        <h3>Meeting ${meetingId}</h3>
+        <p>Language: ${interpretationLanguage}</p>
+        <audio id="audio-${meetingId}" controls autoplay></audio>
+      `;
+      meetingList.appendChild(meetingDiv);
+
+      // Clear form fields
+      document.getElementById('meetingId').value = '';
+      document.getElementById('password').value = '';
+    }
+  </script>
+</body>
+</html>

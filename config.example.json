@@ -1,0 +1,16 @@
+{
+    "sdkKey": "YOUR_SDK_KEY",
+    "sdkSecret": "YOUR_SDK_SECRET",
+    "meetings": [
+      {
+        "meetingId": "123456789",
+        "password": "pass123",
+        "interpretationLanguage": "English"
+      },
+      {
+        "meetingId": "987654321",
+        "password": "pass456",
+        "interpretationLanguage": "English"
+      }
+    ]
+  }
